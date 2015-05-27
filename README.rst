@@ -1,2 +1,4 @@
-# doctrine.urwid
-And urwid editor widget
+doctrine.urwid
+==============
+
+An urwid editor widget
