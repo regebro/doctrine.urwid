@@ -9,21 +9,19 @@ from urwid.compat import bytes, PYTHON3, B
 
 
 if PYTHON3:
-    STRING_TYPES = (bytes, str)
+    STRING_TYPES = (bytes, str)  # pragma: no cover
 else:
-    STRING_TYPES = (str, unicode)
+    STRING_TYPES = (str, unicode)  # pragma: no cover
 
+TWOCHAR_NEWLINES = (u'\n\r', b'\n\r', u'\r\n', b'\r\n')
+ONECHAR_NEWLINES = (u'\n', b'\n', u'\r', b'\r')
 
 def find_newline(text, pos):
-    if text[pos-1:pos+1] in (u'\n\r', b'\n\r', u'\r\n', b'\r\n'):
-        # The second character of a two-character newline: Skip
-        pos += 1
-
     l = len(text)
     while pos < l:
         char = text[pos:pos+1]
 
-        if char in (u'\n', b'\n', u'\r', b'\r'):
+        if char in ONECHAR_NEWLINES:
             return pos
         pos += 1
 
@@ -78,39 +76,40 @@ class CodeLayout(TextLayout):
         p = 0
         if wrap == 'clip':
             # no wrapping to calculate, so it's easy.
+            l = []
             while p<=len(text):
                 n_cr = find_newline(text, p)
-                if p == n_cr:
-                    # A line with no characters.
-                    l.append((0, n_cr))
-                    continue
-
-                line = text[p:n_cr]
-                l = []
-                pt = 0
-                while pt < len(line):
-                    n_tab = line.find(tab_o, pt)
-                    if n_tab == -1:
-                        end = len(line)
-                    else:
-                        end = n_tab
-
-                    sc = calc_width(line, pt, end)
-                    if sc != 0:
-                        l.append((sc, p + pt, p + end))
-
-                    if end == n_tab: # A tab was found
-                        extra_space = self.tab_width - (sc % self.tab_width)
-                        l.append((extra_space, p + n_tab))
-
-                    pt = end + 1
+                if p != n_cr:
+                    line = text[p:n_cr]
+                    pt = 0
+                    while pt < len(line):
+                        n_tab = line.find(tab_o, pt)
+                        if n_tab == -1:
+                            end = len(line)
+                        else:
+                            end = n_tab
+    
+                        sc = calc_width(line, pt, end)
+                        if sc != 0:
+                            l.append((sc, p + pt, p + end))
+    
+                        if end == n_tab: # A tab was found
+                            extra_space = self.tab_width - (sc % self.tab_width)
+                            l.append((extra_space, p + n_tab))
+    
+                        pt = end + 1
 
                 l.append((0, n_cr))
                 b.append(l)
-                p = n_cr + 1
+                l = []
+                if text[n_cr:n_cr+2] in TWOCHAR_NEWLINES:
+                    # Two char newline:
+                    p = n_cr + 2
+                else:
+                    p = n_cr + 1
             return b
 
-        while p < len(text):
+        while p <= len(text):
             # look for next eligible line break
             n_cr = find_newline(text, p)
 
@@ -263,6 +262,14 @@ class CodeLayout(TextLayout):
             # force any char wrap
             if l:
                 b.append(l)
+            elif not line:
+                # An empty line.
+                b.append([(0, n_cr)])
+                pt = 1
+                
+            if text[pt-1:pt+1] in TWOCHAR_NEWLINES:
+                # Two char newline:
+                pt += 1
             p += pt
         return b
 
