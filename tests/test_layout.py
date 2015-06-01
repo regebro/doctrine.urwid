@@ -125,6 +125,8 @@ class CalcBreaksCantDisplayTest(unittest.TestCase):
         self.assertRaises(text_layout.CanNotDisplayText,
             layout.calculate_text_segments,
             B('\xe9\xa2\x96'), 1, 'space' )
+        self.assertEqual(layout.layout(B('\xe9\xa2\x96'), 1, 'left', 'space' ),
+                         [[]])
 
 
 class SubsegTest(unittest.TestCase):

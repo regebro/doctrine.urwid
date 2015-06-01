@@ -88,15 +88,15 @@ class CodeLayout(TextLayout):
                             end = len(line)
                         else:
                             end = n_tab
-    
+
                         sc = calc_width(line, pt, end)
                         if sc != 0:
                             l.append((sc, p + pt, p + end))
-    
+
                         if end == n_tab: # A tab was found
                             extra_space = self.tab_width - (sc % self.tab_width)
                             l.append((extra_space, p + n_tab))
-    
+
                         pt = end + 1
 
                 l.append((0, n_cr))
@@ -266,7 +266,7 @@ class CodeLayout(TextLayout):
                 # An empty line.
                 b.append([(0, n_cr)])
                 pt = 1
-                
+
             if text[pt-1:pt+1] in TWOCHAR_NEWLINES:
                 # Two char newline:
                 pt += 1
@@ -275,20 +275,8 @@ class CodeLayout(TextLayout):
 
     def align_layout( self, text, width, segs, wrap, align ):
         """Convert the layout segs to an aligned layout."""
-        out = []
-        for l in segs:
-            sc = line_width(l)
-            if sc == width or align=='left':
-                out.append(l)
-                continue
-
-            if align == 'right':
-                out.append([(width-sc, None)] + l)
-                continue
-            
-            assert align == 'center'
-            out.append([((width-sc+1) // 2, None)] + l)
-        return out
+        assert align==urwid.LEFT
+        return segs
 
 
 class LineNosWidget(urwid.WidgetWrap):
@@ -337,14 +325,12 @@ class LineEdit(urwid.Edit):
         self.newline = newline
         urwid.Edit.__init__(self, edit_text=edit_text, allow_tab=True,
                             align=align, wrap=wrap, layout=layout)
-        self._wrap_mode = 'clip'
+        self._wrap_mode = 'space'
 
     def set_edit_pos(self, pos):
         if pos < 0:
             pos = 0
         l = len(self._edit_text)
-        if self._edit_text and self._edit_text[-1] == self.newline:
-            l -= 1
         if pos > l:
             pos = l
         self.highlight = None
@@ -363,8 +349,6 @@ class LineEdit(urwid.Edit):
         e_pos = pos - len(self.caption)
         if e_pos < 0: e_pos = 0
         l = len(self.edit_text)
-        if self._edit_text[-1] == self.newline:
-            l -= 1
         if e_pos > l:
             e_pos = l
         self.edit_pos = e_pos
@@ -385,7 +369,7 @@ class LineEdit(urwid.Edit):
 
         elif self._command_map[key] == urwid.CURSOR_RIGHT:
             l = len(self.edit_text)
-            if self._edit_text[-1] == self.newline:
+            if l != 0 and self._edit_text[-1] == self.newline:
                 l -= 1
             if self.edit_pos >= l: return key
             p = move_next_char(self.edit_text,p,len(self.edit_text))

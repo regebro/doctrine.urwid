@@ -6,3 +6,6 @@ exclude_lines =
     # Don't complain if tests don't hit defensive assertion code:
     raise NotImplementedError
     pass
+
+    # See bug 198, https://bitbucket.org/ned/coveragepy/issue/198/continue-marked-as-not-covered
+    continue

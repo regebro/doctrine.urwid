@@ -34,7 +34,7 @@ Aliquam id purus augue. Nulla facilisi.
 or sem.
 """
 
-class TextEditor(unittest.TestCase):
+class TextEditorTest(unittest.TestCase):
 
     def _get_editor(self, text):
         # Need to have an ascii character for this, as we don't have a
@@ -42,6 +42,15 @@ class TextEditor(unittest.TestCase):
         config = urwid.EditorConfig(newline='*')
         codeob = code.Code(io.StringIO(text))
         return urwid.TextEditor(codeob, config)
+
+    def test_linenumbers(self):
+        editor = self._get_editor(LOREM)
+        line_widget = urwid.LineNosWidget(editor)
+        result = line_widget.render((70, 25))
+        self.assertEqual(result.text[0][:4], b'  0 ')
+        self.assertEqual(result.text[1][:4], b'  1 ')
+        # Second line wraps, so no number on line 3:
+        self.assertEqual(result.text[2][:4], b'    ')
 
     def test_render_small(self):
         widget = self._get_editor(u'A text\nwith several\nlines')
@@ -68,6 +77,23 @@ class TextEditor(unittest.TestCase):
         # Move beyond end of line
         widget.keypress(size, 'right')
         self.assertEqual(widget.get_cursor_coords(size), (0, 1))
+
+    def test_movement_limits(self):
+        widget = self._get_editor(LOREM)
+        size = (80, 24)
+        self.assertEqual(widget.get_cursor_coords(size), (0, 0))
+        widget.keypress(size, 'up')
+        self.assertEqual(widget.get_cursor_coords(size), (0, 0))
+        widget.keypress(size, 'left')
+        self.assertEqual(widget.get_cursor_coords(size), (0, 0))
+        widget.keypress(size, 'page down')
+        self.assertEqual(widget.get_cursor_coords(size), (0, 23))
+        widget.keypress(size, 'page down')
+        self.assertEqual(widget.get_cursor_coords(size), (0, 23))
+        widget.keypress(size, 'right')
+        self.assertEqual(widget.get_cursor_coords(size), (0, 23))
+
+
 
     def test_tabs(self):
         widget = self._get_editor(u'A tab\tfor spacing checks\n\t\tcode\n')
