@@ -327,10 +327,14 @@ class LineEdit(urwid.Edit):
                             align=align, wrap=wrap, layout=layout)
         self._wrap_mode = 'space'
 
-    def set_edit_pos(self, pos):
-        if pos < 0:
-            pos = 0
+    def _edit_len(self):
         l = len(self._edit_text)
+        while l and self._edit_text[l-1] in ONECHAR_NEWLINES:
+            l -= 1
+        return l
+
+    def set_edit_pos(self, pos):
+        l = self._edit_len()
         if pos > l:
             pos = l
         self.highlight = None
@@ -347,8 +351,7 @@ class LineEdit(urwid.Edit):
 
         pos = urwid.text_layout.calc_pos( self.get_text()[0], trans, x, y )
         e_pos = pos - len(self.caption)
-        if e_pos < 0: e_pos = 0
-        l = len(self.edit_text)
+        l = self._edit_len()
         if e_pos > l:
             e_pos = l
         self.edit_pos = e_pos
@@ -363,15 +366,15 @@ class LineEdit(urwid.Edit):
             self.insert_text('\t')
 
         elif self._command_map[key] == urwid.CURSOR_LEFT:
-            if p==0: return key
+            if p==0:
+                return key
             p = move_prev_char(self.edit_text,0,p)
             self.set_edit_pos(p)
 
         elif self._command_map[key] == urwid.CURSOR_RIGHT:
-            l = len(self.edit_text)
-            if l != 0 and self._edit_text[-1] == self.newline:
-                l -= 1
-            if self.edit_pos >= l: return key
+            l = self._edit_len()
+            if self.edit_pos >= l:
+                return key
             p = move_next_char(self.edit_text,p,len(self.edit_text))
             # Expand the tabs:
             self.set_edit_pos(p)

@@ -73,8 +73,8 @@ class TextEditorTest(unittest.TestCase):
         self.assertEqual(widget.get_cursor_coords(size), (0, 0))
         # Move beyond start of line
         widget.keypress(size, 'left')
-        self.assertEqual(widget.get_cursor_coords(size), (64, 0))
-        # Move beyond end of line
+        self.assertEqual(widget.get_cursor_coords(size), (63, 0))
+        # Move beyond end of line, goes to start of next line
         widget.keypress(size, 'right')
         self.assertEqual(widget.get_cursor_coords(size), (0, 1))
 
@@ -92,8 +92,6 @@ class TextEditorTest(unittest.TestCase):
         self.assertEqual(widget.get_cursor_coords(size), (0, 23))
         widget.keypress(size, 'right')
         self.assertEqual(widget.get_cursor_coords(size), (0, 23))
-
-
 
     def test_tabs(self):
         widget = self._get_editor(u'A tab\tfor spacing checks\n\t\tcode\n')
