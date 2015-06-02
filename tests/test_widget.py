@@ -115,4 +115,26 @@ class TextEditorTest(unittest.TestCase):
 
     def test_backspace(self):
         widget = self._get_editor(u'A text\nwith several\nlines')
-        widget.keypress((80, 25), 'backspace')
+        size = (80, 25)
+        widget.keypress(size, 'backspace')
+        self.assertEqual(widget.get_cursor_coords(size), (0, 0))
+        self.assertEqual(widget.walker.code[0], u'A text\n')
+        widget.keypress(size, 'right')
+        self.assertEqual(widget.get_cursor_coords(size), (1, 0))
+        widget.keypress(size, 'backspace')
+        self.assertEqual(widget.get_cursor_coords(size), (0, 0))
+        self.assertEqual(widget.walker.code[0], u' text\n')
+
+    def test_inserts(self):
+        widget = self._get_editor(u'A text\nwith several\nlines')
+        size = (80, 25)
+        widget.keypress(size, 'right')
+        widget.keypress(size, 'right')
+        widget.keypress(size, 'right')
+        widget.keypress(size, 'right')
+        self.assertEqual(widget.get_cursor_coords(size), (4, 0))
+        widget.keypress(size, 'tab')
+        self.assertEqual(widget.get_cursor_coords(size), (8, 0))
+        widget.keypress(size, 'tab')
+        self.assertEqual(widget.get_cursor_coords(size), (16, 0))
+        self.assertEqual(widget.walker.code[0], u'A te\t\txt\n')

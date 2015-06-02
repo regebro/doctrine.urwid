@@ -415,18 +415,6 @@ class LineWalker(urwid.ListWalker):
     def get_prev(self, start_from):
         return self._get_at_pos(start_from - 1)
 
-    def read_next_line(self):
-        """Read another line from the file."""
-
-        next_line = self.file.readline()
-
-        if not next_line or next_line[-1:] != '\n':
-            # no newline on last line of file
-            self.file = None
-        else:
-            # trim newline characters
-            next_line = next_line[:-1]
-
     def _get_at_pos(self, pos):
         """Return a widget for the line number passed."""
 
