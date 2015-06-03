@@ -7,7 +7,6 @@ from urwid.util import move_prev_char, move_next_char, calc_width, calc_text_pos
 from urwid.text_layout import CanNotDisplayText, TextLayout, line_width
 from urwid.compat import bytes, PYTHON3, B
 
-
 if PYTHON3:
     STRING_TYPES = (bytes, str)  # pragma: no cover
 else:
@@ -504,7 +503,40 @@ class TextEditor(urwid.ListBox):
         return True
 
     def keypress(self, size, key):
-        key = urwid.ListBox.keypress(self, size, key)
+        (maxcol, maxrow) = size
+
+        def actual_key(unhandled):
+            if unhandled:
+                return key
+
+        if self.set_focus_pending or self.set_focus_valign_pending:
+            self._set_focus_complete((maxcol, maxrow), focus=True)
+
+        focus_widget, pos = self.body.get_focus()
+        if focus_widget is None: # empty listbox, can't do anything
+            return key
+
+        if self._command_map[key] not in [urwid.CURSOR_PAGE_UP,
+                                          urwid.CURSOR_PAGE_DOWN]:
+            if focus_widget.selectable():
+                key = focus_widget.keypress((maxcol,),key)
+            if key is None:
+                self.make_cursor_visible((maxcol,maxrow))
+                return
+
+        # pass off the heavy lifting
+        if self._command_map[key] == urwid.CURSOR_UP:
+            return actual_key(self._keypress_up((maxcol, maxrow)))
+
+        if self._command_map[key] == urwid.CURSOR_DOWN:
+            return actual_key(self._keypress_down((maxcol, maxrow)))
+
+        if self._command_map[key] == urwid.CURSOR_PAGE_UP:
+            return actual_key(self._keypress_page_up((maxcol, maxrow)))
+
+        if self._command_map[key] == urwid.CURSOR_PAGE_DOWN:
+            return actual_key(self._keypress_page_down((maxcol, maxrow)))
+
         if key is None:
             return  # Key was handled
 
