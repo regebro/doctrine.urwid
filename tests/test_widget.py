@@ -60,19 +60,46 @@ class TextEditorTest(unittest.TestCase):
     def test_movement(self):
         widget = self._get_editor(LOREM)
         size = (80, 24)
+
+        # We start at 0, 0
         self.assertEqual(widget.get_cursor_coords(size), (0, 0))
+        # Down moves to next line
         widget.keypress(size, 'down')
         self.assertEqual(widget.get_cursor_coords(size), (0, 1))
+        # And right moves a character in
         widget.keypress(size, 'right')
         self.assertEqual(widget.get_cursor_coords(size), (1, 1))
+        # And left moves a character back
         widget.keypress(size, 'left')
         self.assertEqual(widget.get_cursor_coords(size), (0, 1))
+        # Note that focus_position is which row we are editing,
+        # While cursor_coords are where the cursor are on the screen
+        # At this point they are the same
+        self.assertEqual(widget.focus_position, 1)
+        # But now we page down
         widget.keypress(size, 'page down')
+        # It moved the cursor to the last line:
         self.assertEqual(widget.get_cursor_coords(size), (0, 23))
+        # But we are editing one page down, ie 1 + 24, so now
+        # edit row and cursor coords are not the same any more.
+        self.assertEqual(widget.focus_position, 25)
+        # Page up moves to top of screen
         widget.keypress(size, 'page up')
         self.assertEqual(widget.get_cursor_coords(size), (0, 0))
-        # Move beyond start of line
+        # But, back to line 1!
+        self.assertEqual(widget.focus_position, 1)
+        # Move beyond start of line moves one line up
         widget.keypress(size, 'left')
+        self.assertEqual(widget.get_cursor_coords(size), (63, 0))
+        self.assertEqual(widget.focus_position, 0)
+        # Home goes to the start of the line
+        widget.keypress(size, 'home')
+        self.assertEqual(widget.get_cursor_coords(size), (0, 0))
+        # We are no back at the start of file, and can't go left
+        widget.keypress(size, 'left')
+        self.assertEqual(widget.get_cursor_coords(size), (0, 0))
+        # Go to the end of the line
+        widget.keypress(size, 'end')
         self.assertEqual(widget.get_cursor_coords(size), (63, 0))
         # Move beyond end of line, goes to start of next line
         widget.keypress(size, 'right')
@@ -118,23 +145,24 @@ class TextEditorTest(unittest.TestCase):
         size = (80, 25)
         widget.keypress(size, 'backspace')
         self.assertEqual(widget.get_cursor_coords(size), (0, 0))
-        self.assertEqual(widget.walker.code[0], u'A text\n')
+        self.assertEqual(widget.body.code[0], u'A text\n')
         widget.keypress(size, 'right')
         self.assertEqual(widget.get_cursor_coords(size), (1, 0))
         widget.keypress(size, 'backspace')
         self.assertEqual(widget.get_cursor_coords(size), (0, 0))
-        self.assertEqual(widget.walker.code[0], u' text\n')
+        self.assertEqual(widget.body.code[0], u' text\n')
 
     def test_inserts(self):
         widget = self._get_editor(u'A text\nwith several\nlines')
         size = (80, 25)
         widget.keypress(size, 'right')
         widget.keypress(size, 'right')
+        widget.keypress(size, '!')
         widget.keypress(size, 'right')
         widget.keypress(size, 'right')
-        self.assertEqual(widget.get_cursor_coords(size), (4, 0))
+        self.assertEqual(widget.get_cursor_coords(size), (5, 0))
         widget.keypress(size, 'tab')
         self.assertEqual(widget.get_cursor_coords(size), (8, 0))
         widget.keypress(size, 'tab')
         self.assertEqual(widget.get_cursor_coords(size), (16, 0))
-        self.assertEqual(widget.walker.code[0], u'A te\t\txt\n')
+        self.assertEqual(widget.body.code[0], u'A !te\t\txt\n')

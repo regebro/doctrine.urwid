@@ -14,6 +14,8 @@ else:
 
 TWOCHAR_NEWLINES = (u'\n\r', b'\n\r', u'\r\n', b'\r\n')
 ONECHAR_NEWLINES = (u'\n', b'\n', u'\r', b'\r')
+ERASE_LEFT = 'erase left'
+ERASE_RIGHT = 'erase right'
 
 def find_newline(text, pos):
     l = len(text)
@@ -281,7 +283,7 @@ class CodeLayout(TextLayout):
 class LineNosWidget(urwid.WidgetWrap):
 
     def render(self, size, focus=False):
-        last_line = len(self._w.walker.code.lines)
+        last_line = len(self._w.body.code.lines)
         width = max(3, len(str(last_line)))
 
         max_col, max_rows = size
@@ -357,29 +359,6 @@ class LineEdit(urwid.Edit):
         self.pref_col_maxcol = x, maxcol
         self._invalidate()
         return True
-
-    def keypress(self, size, key):
-        p = self.edit_pos
-
-        if key=="tab" and self.allow_tab:
-            self.insert_text('\t')
-
-        elif self._command_map[key] == urwid.CURSOR_LEFT:
-            if p==0:
-                return key
-            p = move_prev_char(self.edit_text,0,p)
-            self.set_edit_pos(p)
-
-        elif self._command_map[key] == urwid.CURSOR_RIGHT:
-            l = self._edit_len()
-            if self.edit_pos >= l:
-                return key
-            p = move_next_char(self.edit_text,p,len(self.edit_text))
-            # Expand the tabs:
-            self.set_edit_pos(p)
-
-        else:
-            return urwid.Edit.keypress(self, size, key)
 
     def get_text(self):
         # We have a line, now make it into widgets:
@@ -478,6 +457,10 @@ class LineWalker(urwid.ListWalker):
 class EditorConfig(object):
     newline = u'↲'
     screen_encoding = 'UTF-8'
+    command_map = {
+        'backspace': ERASE_LEFT,
+        'delete': ERASE_RIGHT,
+    }
 
     def __init__(self, **kw):
         self.__dict__.update(kw)
@@ -492,66 +475,136 @@ class TextEditor(urwid.ListBox):
         file: A file like object.
         config: An EditorConfig object.
         """
-        self.walker = LineWalker(file, newline=config.newline,
+        walker = LineWalker(file, newline=config.newline,
                                  layout=CodeLayout())
         self.parser = None
-        urwid.ListBox.__init__(self, self.walker)
+        urwid.ListBox.__init__(self, walker)
         self.config = config
         self.codec = codecs.getencoder(config.screen_encoding)
+        for k, v in self.config.command_map.items():
+            self._command_map[k] = v
 
     def selectable(self):
         return True
 
+    def valid_char(self, ch):
+        """
+        Filter for text that may be entered into this widget by the user
+
+        :param ch: character to be inserted
+        :type ch: bytes or unicode
+
+        This implementation returns True for all printable characters.
+        """
+        return is_wide_char(ch,0) or (len(ch)==1 and ord(ch) >= 32)
+
+    def insert_text(self, key, focus_widget, pos):
+        col = focus_widget.edit_pos
+        text = self.body.code[pos]
+        text = text[:col] + key + text[col:]
+        self.body.code[pos] = text
+        focus_widget.set_edit_text(text)
+        focus_widget.set_edit_pos(col + 1)
+
     def keypress(self, size, key):
         (maxcol, maxrow) = size
-
-        def actual_key(unhandled):
-            if unhandled:
-                return key
-
-        if self.set_focus_pending or self.set_focus_valign_pending:
-            self._set_focus_complete((maxcol, maxrow), focus=True)
 
         focus_widget, pos = self.body.get_focus()
         if focus_widget is None: # empty listbox, can't do anything
             return key
 
-        if self._command_map[key] not in [urwid.CURSOR_PAGE_UP,
-                                          urwid.CURSOR_PAGE_DOWN]:
-            if focus_widget.selectable():
-                key = focus_widget.keypress((maxcol,),key)
-            if key is None:
-                self.make_cursor_visible((maxcol,maxrow))
-                return
+        # This is copied. I don't understand what it does.
+        # I will test to remove it, but later.
+        def actual_key(unhandled):
+            if unhandled:
+                return key
 
+        if self.valid_char(key):
+            if (isinstance(key, unicode) and not
+                    isinstance(self._caption, unicode)):
+                # screen is sending us unicode input, must be using utf-8
+                # encoding because that's all we support, so convert it
+                # to bytes to match our caption's type
+                key = key.encode('utf-8')
+            self.insert_text(key, focus_widget, pos)
+            return
+
+        if self.set_focus_pending or self.set_focus_valign_pending:
+            self._set_focus_complete((maxcol, maxrow), focus=True)
+
+        if key=="tab":
+            # Tab is magical and maps to different commands in different
+            # situations. So far we insert a tab, though.
+            self.insert_text('\t', focus_widget, pos)
+
+        command = self._command_map[key]
         # pass off the heavy lifting
-        if self._command_map[key] == urwid.CURSOR_UP:
+        if command == urwid.CURSOR_UP:
             return actual_key(self._keypress_up((maxcol, maxrow)))
 
-        if self._command_map[key] == urwid.CURSOR_DOWN:
+        if command == urwid.CURSOR_DOWN:
             return actual_key(self._keypress_down((maxcol, maxrow)))
 
-        if self._command_map[key] == urwid.CURSOR_PAGE_UP:
+        if command == urwid.CURSOR_PAGE_UP:
             return actual_key(self._keypress_page_up((maxcol, maxrow)))
 
-        if self._command_map[key] == urwid.CURSOR_PAGE_DOWN:
+        if command == urwid.CURSOR_PAGE_DOWN:
             return actual_key(self._keypress_page_down((maxcol, maxrow)))
 
-        if key is None:
-            return  # Key was handled
+        if command == urwid.CURSOR_MAX_LEFT:
+            focus_widget.set_edit_pos(0)
+            return
 
-        # Unhandled keys
-        if self._command_map[key] == urwid.CURSOR_LEFT:
+        if command == urwid.CURSOR_MAX_RIGHT:
+            focus_widget.set_edit_pos(focus_widget._edit_len())
+            return
+
+        if command == urwid.CURSOR_LEFT:
+            col = focus_widget.edit_pos
+            if col != 0:
+                col = move_prev_char(focus_widget.edit_text, 0, col)
+                focus_widget.set_edit_pos(col)
+                return
+
+            # Start of line, move to previous line, if any:
             if self.focus_position == 0:
+                # No previous line
                 return key
-            w, pos = self.walker.get_focus()
-            w, pos = self.walker.get_prev(pos)
-            if w:
-                self.set_focus(pos, 'below')
-                self.keypress(size, "end")
-        elif self._command_map[key] == urwid.CURSOR_RIGHT:
-                w, pos = self.walker.get_focus()
-                w, pos = self.walker.get_next(pos)
-                if w:
-                    self.set_focus(pos, 'above')
-                    self.keypress(size, "home")
+
+            focus_widget, pos = self.body.get_prev(pos)
+            self.set_focus(pos, 'below')
+            self.keypress(size, "end")
+            return
+
+        elif command == urwid.CURSOR_RIGHT:
+            col = focus_widget.edit_pos
+            l = focus_widget._edit_len()
+            if col < l:
+                col = move_next_char(focus_widget.edit_text, col, len(focus_widget.edit_text))
+                focus_widget.set_edit_pos(col)
+                return
+
+            # We are moving beyond the end of line, go to next line.
+            focus_widget, pos = self.body.get_next(pos)
+            if not focus_widget:
+                # No more lines
+                return key
+
+            self.set_focus(pos, 'above')
+            self.keypress(size, "home")
+            return
+
+        elif command == ERASE_LEFT:
+            col = focus_widget.edit_pos
+            if col == 0:
+                if pos == 0:
+                    # Nothing to delete
+                    return key
+                # XXX merge the lines!
+                return
+            self.body.code.delete_characters(pos, col-1, pos, col)
+            focus_widget.set_edit_text(self.body.code[pos])
+            focus_widget.set_edit_pos(col-1)
+            return
+
+        return key
