@@ -479,9 +479,6 @@ class TextEditor(urwid.ListBox):
         for k, v in self.config.command_map.items():
             self._command_map[k] = v
 
-    #def selectable(self):
-        #return True
-
     def valid_char(self, ch):
         """
         Filter for text that may be entered into this widget by the user
