@@ -31,8 +31,7 @@ Phasellus pharetra nisl quis aliquet mattis. Phasellus et diam urna. In ac
 tristique felis, vel ultrices eros. Donec nec mauris ut nisl ultrices iaculis
 ac vitae erat. Cras varius pulvinar metus eu varius. Sed at magna lacus.
 Aliquam id purus augue. Nulla facilisi.
-or sem.
-"""
+or sem."""
 
 class TextEditorTest(unittest.TestCase):
 
@@ -56,6 +55,18 @@ class TextEditorTest(unittest.TestCase):
         widget = self._get_editor(u'A text\nwith several\nlines')
         result = widget.render((15, 15))
         self.assertEqual(result.text[0], b'A text*        ')
+
+    def test_render_empty(self):
+        widget = self._get_editor(u'')
+        size = (80, 25)
+
+        canvas = widget.render(size)
+        self.assertEqual(canvas.text[0], 80 * ' ')
+        self.assertEqual(widget.keypress(size, 'backspace'), 'backspace')
+        self.assertEqual(widget.keypress(size, 'delete'), 'delete')
+        self.assertIsNone(widget.keypress(size, 'enter'))
+        self.assertEqual(widget.body.code[0], '\n')
+        self.assertEqual(widget.body.code[1], '')
 
     def test_movement(self):
         widget = self._get_editor(LOREM)
@@ -117,8 +128,10 @@ class TextEditorTest(unittest.TestCase):
         self.assertEqual(widget.get_cursor_coords(size), (0, 23))
         widget.keypress(size, 'page down')
         self.assertEqual(widget.get_cursor_coords(size), (0, 23))
+        widget.keypress(size, 'end')
+        self.assertEqual(widget.get_cursor_coords(size), (7, 23))
         widget.keypress(size, 'right')
-        self.assertEqual(widget.get_cursor_coords(size), (0, 23))
+        self.assertEqual(widget.get_cursor_coords(size), (7, 23))
 
     def test_tabs(self):
         widget = self._get_editor(u'A tab\tfor spacing checks\n\t\tcode\n')
@@ -140,6 +153,27 @@ class TextEditorTest(unittest.TestCase):
         widget.keypress(size, 'right')
         self.assertEqual(widget.get_cursor_coords(size), (9, 1))
 
+    def test_delete(self):
+        widget = self._get_editor(u'A text\nwith several\nlines')
+        size = (80, 25)
+        widget.keypress(size, 'page down')
+        widget.keypress(size, 'end')
+        widget.keypress(size, 'delete')
+        self.assertEqual(widget.get_cursor_coords(size), (5, 2))
+        self.assertEqual(widget.body.code[2], u'lines')
+        widget.keypress(size, 'left')
+        self.assertEqual(widget.get_cursor_coords(size), (4, 2))
+        widget.keypress(size, 'delete')
+        self.assertEqual(widget.get_cursor_coords(size), (4, 2))
+        self.assertEqual(widget.body.code[2], u'line')
+        widget.keypress(size, 'up')
+        widget.keypress(size, 'end')
+        self.assertEqual(widget.get_cursor_coords(size), (12, 1))
+        widget.keypress(size, 'delete')
+        self.assertEqual(widget.get_cursor_coords(size), (12, 1))
+        self.assertEqual(widget.body.code[1], u'with severalline')
+        self.assertEqual(len(widget.body.code), 2)
+
     def test_backspace(self):
         widget = self._get_editor(u'A text\nwith several\nlines')
         size = (80, 25)
@@ -151,6 +185,11 @@ class TextEditorTest(unittest.TestCase):
         widget.keypress(size, 'backspace')
         self.assertEqual(widget.get_cursor_coords(size), (0, 0))
         self.assertEqual(widget.body.code[0], u' text\n')
+        widget.keypress(size, 'down')
+        widget.keypress(size, 'backspace')
+        self.assertEqual(widget.get_cursor_coords(size), (5, 0))
+        self.assertEqual(widget.body.code[0], u' textwith several\n')
+        self.assertEqual(len(widget.body.code), 2)
 
     def test_inserts(self):
         widget = self._get_editor(u'A text\nwith several\nlines')
@@ -166,3 +205,19 @@ class TextEditorTest(unittest.TestCase):
         widget.keypress(size, 'tab')
         self.assertEqual(widget.get_cursor_coords(size), (16, 0))
         self.assertEqual(widget.body.code[0], u'A !te\t\txt\n')
+        widget.keypress(size, 'enter')
+        self.assertEqual(widget.body.code[0], u'A !te\t\t\n')
+        self.assertEqual(widget.body.code[1], u'xt\n')
+
+    def test_keypress(self):
+        widget = self._get_editor(u'A text\nwith several\nlines')
+        size = (80, 25)
+        # Unhandled keys should be returned
+        self.assertEqual(widget.keypress(size, 'left'), 'left')
+        self.assertEqual(widget.keypress(size, 'F4'), 'F4')
+
+        # Others not
+        self.assertIsNone(widget.keypress(size, 'right'))
+        self.assertIsNone(widget.keypress(size, 'delete'))
+        self.assertIsNone(widget.keypress(size, 'r'))
+        self.assertIsNone(widget.keypress(size, 'enter'))

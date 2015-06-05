@@ -328,14 +328,14 @@ class LineEdit(urwid.Edit):
                             align=align, wrap=wrap, layout=layout)
         self._wrap_mode = 'space'
 
-    def _edit_len(self):
+    def get_edit_len(self):
         l = len(self._edit_text)
         while l and self._edit_text[l-1] in ONECHAR_NEWLINES:
             l -= 1
         return l
 
     def set_edit_pos(self, pos):
-        l = self._edit_len()
+        l = self.get_edit_len()
         if pos > l:
             pos = l
         self.highlight = None
@@ -350,11 +350,8 @@ class LineEdit(urwid.Edit):
         if y < top_y or y >= len(trans):
             return False
 
-        pos = urwid.text_layout.calc_pos( self.get_text()[0], trans, x, y )
+        pos = urwid.text_layout.calc_pos(self.get_text()[0], trans, x, y)
         e_pos = pos - len(self.caption)
-        l = self._edit_len()
-        if e_pos > l:
-            e_pos = l
         self.edit_pos = e_pos
         self.pref_col_maxcol = x, maxcol
         self._invalidate()
@@ -365,7 +362,7 @@ class LineEdit(urwid.Edit):
         text = self._edit_text
 
         # Show the newline
-        if text[-1:] in '\r\n':
+        if text and text[-1] in '\r\n':
             text = text.rstrip('\r\n') + self.newline
         return text, self._attrib
 
@@ -378,7 +375,10 @@ class LineWalker(urwid.ListWalker):
         self.newline = newline
         self.focus = 0
         self.layout = layout
-        self.widgets = {}
+        self.widgets = []
+
+    def _make_widget(self, edit_text):
+        return LineEdit(edit_text, newline=self.newline, layout=self.layout)
 
     def get_focus(self):
         return self._get_at_pos(self.focus)
@@ -400,7 +400,8 @@ class LineWalker(urwid.ListWalker):
             # line 0 is the start of the file, no more above
             return None, None
 
-        if pos in self.widgets:
+        l = len(self.widgets)
+        if pos < l:
             # we have that line so return it
             return self.widgets[pos], pos
 
@@ -411,47 +412,41 @@ class LineWalker(urwid.ListWalker):
             # Past end of file:
             return None, None
 
-        edit = LineEdit(next_line, newline=self.newline, layout=self.layout)
+        edit = self._make_widget(next_line)
         edit.set_edit_pos(0)
-        self.widgets[pos] = edit
+        self.widgets.append(edit)
 
         return edit, pos
 
-    def split_focus(self):
-        """Divide the focus edit widget at the cursor location."""
-
-        focus = self.lines[self.focus]
-        pos = focus.edit_pos
-        edit = LineEdit(focus.edit_text[pos:], allow_tab=True)
-        focus.set_edit_text(focus.edit_text[:pos])
-        edit.set_edit_pos(0)
-        self.lines.insert(self.focus+1, edit)
+    def split_focus(self, insertion):
+        """The focus line has been split into two"""
+        pos = self.focus
+        focus_widget = self.widgets[pos]
+        col = focus_widget.edit_pos
+        self.code.split_row(pos, col, insertion)
+        self.widgets[pos].set_edit_text(self.code[pos])
+        new_widget = self._make_widget(self.code[pos + 1])
+        new_widget.set_edit_pos(0)
+        self.widgets.insert(self.focus + 1, new_widget)
+        self.set_focus(pos + 1)
 
     def combine_focus_with_prev(self):
         """Combine the focus edit widget with the one above."""
-
-        above, ignore = self.get_prev(self.focus)
-        if above is None:
-            # already at the top
-            return
-
-        focus = self.lines[self.focus]
-        above.set_edit_pos(len(above.edit_text))
-        above.set_edit_text(above.edit_text + focus.edit_text)
-        del self.lines[self.focus]
-        self.focus -= 1
+        focus_widget, pos = self.get_prev(self.focus)
+        focus_widget.set_edit_pos(focus_widget.get_edit_len())
+        self.code.merge_rows(pos, pos + 1)
+        focus_widget.set_edit_text(self.code[pos])
+        del self.widgets[pos + 1]
+        self.focus = pos
 
     def combine_focus_with_next(self):
         """Combine the focus edit widget with the one below."""
-
-        below, ignore = self.get_next(self.focus)
-        if below is None:
-            # already at bottom
-            return
-
-        focus = self.lines[self.focus]
-        focus.set_edit_text(focus.edit_text + below.edit_text)
-        del self.lines[self.focus+1]
+        pos = self.focus
+        focus_widget, ignore = self.get_next(pos)
+        self.code.merge_rows(pos, pos + 1)
+        focus_widget.set_edit_text(self.code[pos])
+        focus_widget.set_edit_pos(self.widgets[pos].edit_pos)
+        del self.widgets[pos]
 
 
 class EditorConfig(object):
@@ -484,8 +479,8 @@ class TextEditor(urwid.ListBox):
         for k, v in self.config.command_map.items():
             self._command_map[k] = v
 
-    def selectable(self):
-        return True
+    #def selectable(self):
+        #return True
 
     def valid_char(self, ch):
         """
@@ -510,8 +505,6 @@ class TextEditor(urwid.ListBox):
         (maxcol, maxrow) = size
 
         focus_widget, pos = self.body.get_focus()
-        if focus_widget is None: # empty listbox, can't do anything
-            return key
 
         # This is copied. I don't understand what it does.
         # I will test to remove it, but later.
@@ -520,12 +513,6 @@ class TextEditor(urwid.ListBox):
                 return key
 
         if self.valid_char(key):
-            if (isinstance(key, unicode) and not
-                    isinstance(self._caption, unicode)):
-                # screen is sending us unicode input, must be using utf-8
-                # encoding because that's all we support, so convert it
-                # to bytes to match our caption's type
-                key = key.encode('utf-8')
             self.insert_text(key, focus_widget, pos)
             return
 
@@ -536,6 +523,13 @@ class TextEditor(urwid.ListBox):
             # Tab is magical and maps to different commands in different
             # situations. So far we insert a tab, though.
             self.insert_text('\t', focus_widget, pos)
+            return
+
+        if key=="enter":
+            # We don't want to be able to remap enter, so we handle it here,
+            # shortcutting it's command mapping.
+            self.body.split_focus('\n')
+            return
 
         command = self._command_map[key]
         # pass off the heavy lifting
@@ -556,7 +550,7 @@ class TextEditor(urwid.ListBox):
             return
 
         if command == urwid.CURSOR_MAX_RIGHT:
-            focus_widget.set_edit_pos(focus_widget._edit_len())
+            focus_widget.set_edit_pos(focus_widget.get_edit_len())
             return
 
         if command == urwid.CURSOR_LEFT:
@@ -576,9 +570,9 @@ class TextEditor(urwid.ListBox):
             self.keypress(size, "end")
             return
 
-        elif command == urwid.CURSOR_RIGHT:
+        if command == urwid.CURSOR_RIGHT:
             col = focus_widget.edit_pos
-            l = focus_widget._edit_len()
+            l = focus_widget.get_edit_len()
             if col < l:
                 col = move_next_char(focus_widget.edit_text, col, len(focus_widget.edit_text))
                 focus_widget.set_edit_pos(col)
@@ -594,17 +588,34 @@ class TextEditor(urwid.ListBox):
             self.keypress(size, "home")
             return
 
-        elif command == ERASE_LEFT:
+        if command == ERASE_LEFT:
             col = focus_widget.edit_pos
             if col == 0:
                 if pos == 0:
                     # Nothing to delete
                     return key
-                # XXX merge the lines!
+                # Merge the lines
+                self.body.combine_focus_with_prev()
                 return
             self.body.code.delete_characters(pos, col-1, pos, col)
             focus_widget.set_edit_text(self.body.code[pos])
             focus_widget.set_edit_pos(col-1)
+            return
+
+        if command == ERASE_RIGHT:
+            col = focus_widget.edit_pos
+            if col == focus_widget.get_edit_len():
+                # End of line
+                nextline, ignore = self.body.get_next(pos)
+                if nextline is None:
+                    # Nothing to delete
+                    return key
+                # Merge the lines
+                self.body.combine_focus_with_next()
+                return
+            self.body.code.delete_characters(pos, col, pos, col + 1)
+            focus_widget.set_edit_text(self.body.code[pos])
+            #focus_widget.set_edit_pos(col-1)
             return
 
         return key
