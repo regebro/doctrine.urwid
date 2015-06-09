@@ -1,23 +1,13 @@
 # -*- coding: UTF-8 -*-
 import urwid
-import math
 
-from encodings import codecs
 from urwid.util import (move_prev_char, move_next_char, calc_width,
                         calc_text_pos, is_wide_char)
-from urwid.text_layout import CanNotDisplayText, TextLayout, line_width
+from urwid.text_layout import CanNotDisplayText, TextLayout
 from urwid.compat import bytes, PYTHON3, B
 
-
-if PYTHON3:
-    STRING_TYPES = (bytes, str)  # pragma: no cover
-else:
-    STRING_TYPES = (str, unicode)  # pragma: no cover
-
-TWOCHAR_NEWLINES = (u'\n\r', b'\n\r', u'\r\n', b'\r\n')
 ONECHAR_NEWLINES = (u'\n', b'\n', u'\r', b'\r')
-ERASE_LEFT = 'erase left'
-ERASE_RIGHT = 'erase right'
+TWOCHAR_NEWLINES = (u'\n\r', b'\n\r', u'\r\n', b'\r\n')
 
 
 def find_newline(text, pos):
