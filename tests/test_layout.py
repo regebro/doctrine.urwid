@@ -8,31 +8,32 @@ from doctrine.urwid import CodeLayout
 
 
 ##################################################
-## Tests copied from urwid.tests.test_text_layout
+# Tests copied from urwid.tests.test_text_layout
 ##################################################
 
 layout = CodeLayout()
 
+
 class CalcBreaksTest(object):
     def cbtest(self, width, exp):
         result = layout.calculate_text_segments(
-            B(self.text), width, self.mode )
+            B(self.text), width, self.mode)
         assert len(result) == len(exp), repr((result, exp))
-        for l,e in zip(result, exp):
+        for l, e in zip(result, exp):
             end = l[-1][-1]
-            assert end == e, repr((result,exp))
+            assert end == e, repr((result, exp))
 
     def test(self):
         for width, exp in self.do:
-            self.cbtest( width, exp )
+            self.cbtest(width, exp)
 
 
 class CalcTabTest(object):
     def cbtest(self, width, exp):
         result = layout.calculate_text_segments(
-            B(self.text), width, self.mode )
+            B(self.text), width, self.mode)
         assert len(result) == len(exp), repr((result, exp))
-        for l,e in zip(result, exp):
+        for l, e in zip(result, exp):
             assert len(l) == len(e), repr((result, exp))
             for ls, es in zip(l, e):
                 end = ls[-1]
@@ -40,16 +41,17 @@ class CalcTabTest(object):
 
     def test(self):
         for width, exp in self.do:
-            self.cbtest( width, exp )
+            self.cbtest(width, exp)
+
 
 class CalcBreaksCharTest(CalcBreaksTest, unittest.TestCase):
     mode = 'any'
     text = "abfghsdjf askhtrvs\naltjhgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [18, 38]),
-        ( 6, [6, 12, 18, 25, 31, 37, 38]),
-        ( 10, [10, 18, 29, 38]),
+        (100, [18, 38]),
+        (6, [6, 12, 18, 25, 31, 37, 38]),
+        (10, [10, 18, 29, 38]),
     ]
 
 
@@ -61,9 +63,9 @@ class CalcBreaksDBCharTest(CalcBreaksTest, unittest.TestCase):
     text = "abfgh\xA1\xA1j\xA1\xA1xskhtrvs\naltjhgsdf\xA1\xA1jahtshgf"
     # tests
     do = [
-        ( 10, [10, 18, 28, 38]),
-        ( 6, [5, 11, 17, 18, 25, 31, 37, 38]),
-        ( 100, [18, 38]),
+        (10, [10, 18, 28, 38]),
+        (6, [5, 11, 17, 18, 25, 31, 37, 38]),
+        (100, [18, 38]),
     ]
 
 
@@ -72,9 +74,9 @@ class CalcBreaksWordTest(CalcBreaksTest, unittest.TestCase):
     text = "hello world\nout there. blah"
     # tests
     do = [
-        ( 10, [5, 11, 22, 27]),
-        ( 5, [5, 11, 17, 22, 27]),
-        ( 100, [11, 27]),
+        (10, [5, 11, 22, 27]),
+        (5, [5, 11, 17, 22, 27]),
+        (100, [11, 27]),
     ]
 
 
@@ -82,9 +84,9 @@ class CalcBreaksWordTest2(CalcBreaksTest, unittest.TestCase):
     mode = 'space'
     text = "A simple set of words, really...."
     do = [
-        ( 10, [8, 15, 22, 33]),
-        ( 17, [15, 33]),
-        ( 13, [12, 22, 33]),
+        (10, [8, 15, 22, 33]),
+        (17, [15, 33]),
+        (13, [12, 22, 33]),
     ]
 
 
@@ -96,9 +98,9 @@ class CalcBreaksDBWordTest(CalcBreaksTest, unittest.TestCase):
     text = "hel\xA1\xA1 world\nout-\xA1\xA1tre blah"
     # tests
     do = [
-        ( 10, [5, 11, 21, 26]),
-        ( 5, [5, 11, 16, 21, 26]),
-        ( 100, [11, 26]),
+        (10, [5, 11, 21, 26]),
+        (5, [5, 11, 16, 21, 26]),
+        (100, [11, 26]),
     ]
 
 
@@ -119,13 +121,13 @@ class CalcBreaksCantDisplayTest(unittest.TestCase):
     def test(self):
         urwid.set_encoding("euc-jp")
         self.assertRaises(text_layout.CanNotDisplayText,
-            layout.calculate_text_segments,
-            B('\xA1\xA1'), 1, 'space' )
+                          layout.calculate_text_segments,
+                          B('\xA1\xA1'), 1, 'space')
         urwid.set_encoding("utf-8")
         self.assertRaises(text_layout.CanNotDisplayText,
-            layout.calculate_text_segments,
-            B('\xe9\xa2\x96'), 1, 'space' )
-        self.assertEqual(layout.layout(B('\xe9\xa2\x96'), 1, 'left', 'space' ),
+                          layout.calculate_text_segments,
+                          B('\xe9\xa2\x96'), 1, 'space')
+        self.assertEqual(layout.layout(B('\xe9\xa2\x96'), 1, 'left', 'space'),
                          [[]])
 
 
@@ -136,42 +138,42 @@ class SubsegTest(unittest.TestCase):
     def st(self, seg, text, start, end, exp):
         text = B(text)
         s = urwid.LayoutSegment(seg)
-        result = s.subseg( text, start, end )
-        assert result == exp, "Expected %r, got %r"%(exp,result)
+        result = s.subseg(text, start, end)
+        assert result == exp, "Expected %r, got %r" % (exp, result)
 
     def test1_padding(self):
-        self.st( (10, None), "", 0, 8,    [(8, None)])
-        self.st( (10, None), "", 2, 10, [(8, None)])
-        self.st( (10, 0), "", 3, 7,     [(4, 0)])
-        self.st( (10, 0), "", 0, 20,     [(10, 0)])
+        self.st((10, None), "", 0, 8,    [(8, None)])
+        self.st((10, None), "", 2, 10, [(8, None)])
+        self.st((10, 0), "", 3, 7,     [(4, 0)])
+        self.st((10, 0), "", 0, 20,     [(10, 0)])
 
     def test2_text(self):
-        self.st( (10, 0, B("1234567890")), "", 0, 8,  [(8, 0,B("12345678"))])
-        self.st( (10, 0, B("1234567890")), "", 2, 10, [(8, 0,B("34567890"))])
-        self.st( (10, 0, B("12\xA1\xA156\xA1\xA190")), "", 2, 8,
-            [(6, 0, B("\xA1\xA156\xA1\xA1"))])
-        self.st( (10, 0, B("12\xA1\xA156\xA1\xA190")), "", 3, 8,
-            [(5, 0, B(" 56\xA1\xA1"))])
-        self.st( (10, 0, B("12\xA1\xA156\xA1\xA190")), "", 2, 7,
-            [(5, 0, B("\xA1\xA156 "))])
-        self.st( (10, 0, B("12\xA1\xA156\xA1\xA190")), "", 3, 7,
-            [(4, 0, B(" 56 "))])
-        self.st( (10, 0, B("12\xA1\xA156\xA1\xA190")), "", 0, 20,
-            [(10, 0, B("12\xA1\xA156\xA1\xA190"))])
+        self.st((10, 0, B("1234567890")), "", 0, 8,  [(8, 0, B("12345678"))])
+        self.st((10, 0, B("1234567890")), "", 2, 10, [(8, 0, B("34567890"))])
+        self.st((10, 0, B("12\xA1\xA156\xA1\xA190")), "", 2, 8,
+                [(6, 0, B("\xA1\xA156\xA1\xA1"))])
+        self.st((10, 0, B("12\xA1\xA156\xA1\xA190")), "", 3, 8,
+                [(5, 0, B(" 56\xA1\xA1"))])
+        self.st((10, 0, B("12\xA1\xA156\xA1\xA190")), "", 2, 7,
+                [(5, 0, B("\xA1\xA156 "))])
+        self.st((10, 0, B("12\xA1\xA156\xA1\xA190")), "", 3, 7,
+                [(4, 0, B(" 56 "))])
+        self.st((10, 0, B("12\xA1\xA156\xA1\xA190")), "", 0, 20,
+                [(10, 0, B("12\xA1\xA156\xA1\xA190"))])
 
     def test3_range(self):
         t = "1234567890"
-        self.st( (10, 0, 10), t, 0, 8,    [(8, 0, 8)])
-        self.st( (10, 0, 10), t, 2, 10, [(8, 2, 10)])
-        self.st( (6, 2, 8), t, 1, 6,     [(5, 3, 8)])
-        self.st( (6, 2, 8), t, 0, 5,     [(5, 2, 7)])
-        self.st( (6, 2, 8), t, 1, 5,     [(4, 3, 7)])
+        self.st((10, 0, 10), t, 0, 8,    [(8, 0, 8)])
+        self.st((10, 0, 10), t, 2, 10, [(8, 2, 10)])
+        self.st((6, 2, 8), t, 1, 6,     [(5, 3, 8)])
+        self.st((6, 2, 8), t, 0, 5,     [(5, 2, 7)])
+        self.st((6, 2, 8), t, 1, 5,     [(4, 3, 7)])
         t = "12\xA1\xA156\xA1\xA190"
-        self.st( (10, 0, 10), t, 0, 8,    [(8, 0, 8)])
-        self.st( (10, 0, 10), t, 2, 10, [(8, 2, 10)])
-        self.st( (6, 2, 8), t, 1, 6,     [(1, 3), (4, 4, 8)])
-        self.st( (6, 2, 8), t, 0, 5,     [(4, 2, 6), (1, 6)])
-        self.st( (6, 2, 8), t, 1, 5,     [(1, 3), (2, 4, 6), (1, 6)])
+        self.st((10, 0, 10), t, 0, 8,    [(8, 0, 8)])
+        self.st((10, 0, 10), t, 2, 10, [(8, 2, 10)])
+        self.st((6, 2, 8), t, 1, 6,     [(1, 3), (4, 4, 8)])
+        self.st((6, 2, 8), t, 0, 5,     [(4, 2, 6), (1, 6)])
+        self.st((6, 2, 8), t, 1, 5,     [(1, 3), (2, 4, 6), (1, 6)])
 
 
 class CalcTranslateTest(object):
@@ -179,18 +181,18 @@ class CalcTranslateTest(object):
         urwid.set_encoding("utf-8")
 
     def test1_left(self):
-        result = urwid.default_layout.layout( self.text,
-            self.width, 'left', self.mode)
+        result = urwid.default_layout.layout(self.text, self.width, 'left',
+                                             self.mode)
         assert result == self.result_left, result
 
     def test2_right(self):
-        result = urwid.default_layout.layout( self.text,
-            self.width, 'right', self.mode)
+        result = urwid.default_layout.layout(self.text, self.width, 'right',
+                                             self.mode)
         assert result == self.result_right, result
 
     def test3_center(self):
-        result = urwid.default_layout.layout( self.text,
-            self.width, 'center', self.mode)
+        result = urwid.default_layout.layout(self.text, self.width, 'center',
+                                             self.mode)
         assert result == self.result_center, result
 
 
@@ -316,6 +318,7 @@ class CalcTranslateClipTest(CalcTranslateTest, unittest.TestCase):
         [(7, None), (0, 35)],
         [(14, 36, 50), (0, 50)]]
 
+
 class CalcTranslateCantDisplayTest(CalcTranslateTest, unittest.TestCase):
     text = B('Hello\xe9\xa2\x96')
     mode = 'space'
@@ -329,16 +332,16 @@ class CalcPosTest(unittest.TestCase):
     def setUp(self):
         self.text = "A" * 27
         self.trans = [
-            [(2, None),(7, 0,7),(0,7)],
-            [(13, 8, 21),(0, 21)],
-            [(3, None),(5, 22, 27),(0, 27)]]
+            [(2, None), (7, 0, 7), (0, 7)],
+            [(13, 8, 21), (0, 21)],
+            [(3, None), (5, 22, 27), (0, 27)]]
         self.mytests = [(1, 0, 0), (2, 0, 0), (11, 0, 7),
-            (-3, 1, 8), (-2, 1, 8), (1, 1, 9), (31, 1, 21),
-            (1, 2, 22), (11, 2, 27) ]
+                        (-3, 1, 8), (-2, 1, 8), (1, 1, 9), (31, 1, 21),
+                        (1, 2, 22), (11, 2, 27)]
 
     def tests(self):
-        for x,y, expected in self.mytests:
-            got = text_layout.calc_pos( self.text, self.trans, x, y )
+        for x, y, expected in self.mytests:
+            got = text_layout.calc_pos(self.text, self.trans, x, y)
             assert got == expected, "%r got:%r expected:%r" % ((x, y), got,
                                                                expected)
 
@@ -347,28 +350,28 @@ class Pos2CoordsTest(unittest.TestCase):
     pos_list = [5, 9, 20, 26]
     text = "1234567890" * 3
     mytests = [
-        ( [[(15, 0, 15)], [(15, 15, 30),(0, 30)]],
-            [(5, 0),(9, 0),(5, 1),(11, 1)]),
-        ( [[(9, 0, 9)], [(12, 9, 21)], [(9, 21, 30),(0, 30)]],
-            [(5, 0),(0, 1),(11, 1),(5, 2)]),
-        ( [[(2, None), (15, 0, 15)], [(2, None), (15, 15, 30),(0, 30)]],
-            [(7, 0),(11, 0),(7, 1),(13, 1)]),
-        ( [[(3, 6, 9),(0, 9)], [(5, 20, 25),(0, 25)]],
-            [(0, 0),(3, 0),(0, 1),(5, 1)]),
-        ( [[(10, 0, 10),(0, 10)]],
-            [(5, 0),(9, 0),(10, 0),(10, 0)]),
+        ([[(15, 0, 15)], [(15, 15, 30), (0, 30)]],
+            [(5, 0), (9, 0), (5, 1), (11, 1)]),
+        ([[(9, 0, 9)], [(12, 9, 21)], [(9, 21, 30), (0, 30)]],
+            [(5, 0), (0, 1), (11, 1), (5, 2)]),
+        ([[(2, None), (15, 0, 15)], [(2, None), (15, 15, 30), (0, 30)]],
+            [(7, 0), (11, 0), (7, 1), (13, 1)]),
+        ([[(3, 6, 9), (0, 9)], [(5, 20, 25), (0, 25)]],
+            [(0, 0), (3, 0), (0, 1), (5, 1)]),
+        ([[(10, 0, 10), (0, 10)]],
+            [(5, 0), (9, 0), (10, 0), (10, 0)]),
 
         ]
 
     def test(self):
         for t, answer in self.mytests:
-            for pos,a in zip(self.pos_list,answer) :
-                r = text_layout.calc_coords( self.text, t, pos)
-                assert r==a, "%r got: %r expected: %r"%(t,r,a)
+            for pos, a in zip(self.pos_list, answer):
+                r = text_layout.calc_coords(self.text, t, pos)
+                assert r == a, "%r got: %r expected: %r" % (t, r, a)
 
 
 #################################################
-## Tests for clipping without tabs
+# Tests for clipping without tabs
 #################################################
 
 class CalcClipCharTest(CalcBreaksTest, unittest.TestCase):
@@ -376,9 +379,9 @@ class CalcClipCharTest(CalcBreaksTest, unittest.TestCase):
     text = "abfghsdjf askhtrvs\naltjhgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [18, 38]),
-        ( 6, [18, 38]),
-        ( 10, [18, 38]),
+        (100, [18, 38]),
+        (6, [18, 38]),
+        (10, [18, 38]),
     ]
 
 
@@ -390,9 +393,9 @@ class CalcClipDBCharTest(CalcBreaksTest, unittest.TestCase):
     text = "abfgh\xA1\xA1j\xA1\xA1xskhtrvs\naltjhgsdf\xA1\xA1jahtshgf"
     # tests
     do = [
-        ( 10, [18, 38]),
-        ( 6, [18, 38]),
-        ( 100, [18, 38]),
+        (10, [18, 38]),
+        (6, [18, 38]),
+        (100, [18, 38]),
     ]
 
 
@@ -410,7 +413,7 @@ class CalcClipUTF8Test(CalcBreaksTest, unittest.TestCase):
 
 
 #################################################
-## Tests for layouts with tabs
+# Tests for layouts with tabs
 #################################################
 
 class CalcClipCharTabTest(CalcTabTest, unittest.TestCase):
@@ -418,9 +421,9 @@ class CalcClipCharTabTest(CalcTabTest, unittest.TestCase):
     text = "abfg\tsdjf\taskhtrvs\naltjhgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [[4, 4, 9, 9, 18, 18], [38, 38]]),
-        ( 6, [[4, 4, 9, 9, 18, 18], [38, 38]]),
-        ( 10, [[4, 4, 9, 9, 18, 18], [38, 38]]),
+        (100, [[4, 4, 9, 9, 18, 18], [38, 38]]),
+        (6, [[4, 4, 9, 9, 18, 18], [38, 38]]),
+        (10, [[4, 4, 9, 9, 18, 18], [38, 38]]),
     ]
 
 
@@ -432,9 +435,9 @@ class CalcClipDBCharTabTest(CalcTabTest, unittest.TestCase):
     text = "abfgh\xA1\t\xA1j\xA1\xA1xskhtrv\naltjh\tsdf\xA1\xA1jahtshgf"
     # tests
     do = [
-        ( 10, [[6, 6, 18, 18], [24, 24, 38, 38]]),
-        ( 6, [[6, 6, 18, 18], [24, 24, 38, 38]]),
-        ( 100, [[6, 6, 18, 18], [24, 24, 38, 38]]),
+        (10, [[6, 6, 18, 18], [24, 24, 38, 38]]),
+        (6, [[6, 6, 18, 18], [24, 24, 38, 38]]),
+        (100, [[6, 6, 18, 18], [24, 24, 38, 38]]),
     ]
 
 
@@ -456,9 +459,9 @@ class CalcClipCharMultiTabTest(CalcTabTest, unittest.TestCase):
     text = "\t\tabfg ssdjf\tatrvs\naltj\t\tsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
-        ( 10, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
-        ( 6, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
+        (100, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
+        (10, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
+        (6, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
     ]
 
 
@@ -467,9 +470,11 @@ class CalcBreaksCharTabTest(CalcTabTest, unittest.TestCase):
     text = "abfg\tsdjf\taskhtrvs\naltjhgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [[4, 4, 9, 9, 18, 18], [38, 38]]),
-        ( 6, [[4, 4], [9, 9], [16, 16], [18, 18], [25, 25], [31, 31], [37, 37], [38, 38]]),
-        ( 10, [[4, 4, 7, 7], [9, 9, 12, 12], [18, 18], [29, 29], [38, 38]]),
+        (100, [[4, 4, 9, 9, 18, 18], [38, 38]]),
+        (6, [[4, 4], [9, 9], [16, 16], [18, 18], [25, 25],
+             [31, 31], [37, 37], [38, 38]]),
+        (10, [[4, 4, 7, 7], [9, 9, 12, 12], [18, 18],
+              [29, 29], [38, 38]]),
     ]
 
 
@@ -478,9 +483,10 @@ class CalcBreaksCharTabTest2(CalcTabTest, unittest.TestCase):
     text = "abfg\tsd f askh rvs\nalt\thgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [[4, 4, 18, 18], [3, 3, 38, 38]]),
-        ( 6, [[4, 4], [11, 11], [17, 17], [18, 18], [22, 22], [29, 29], [35, 35], [38, 38]]),
-        ( 20, [[4, 4, 17, 17], [18, 18], [22, 22, 35, 35], [38, 38]]),
+        (100, [[4, 4, 18, 18], [3, 3, 38, 38]]),
+        (6, [[4, 4], [11, 11], [17, 17], [18, 18], [22, 22],
+             [29, 29], [35, 35], [38, 38]]),
+        (20, [[4, 4, 17, 17], [18, 18], [22, 22, 35, 35], [38, 38]]),
     ]
 
 
@@ -493,8 +499,10 @@ class CalcBreaksDBCharTabTest(CalcTabTest, unittest.TestCase):
     # tests
 
     do = [
-        (10, [[3, 3, 5, 5], [11, 11, 14, 14], [18, 18], [23, 23, 26, 26], [35, 35], [38, 38]]),
-        (6, [[3, 3], [10, 10], [11, 11], [18, 18], [23, 23], [30, 30], [35, 35], [38, 38]]),
+        (10, [[3, 3, 5, 5], [11, 11, 14, 14], [18, 18], [23, 23, 26, 26],
+              [35, 35], [38, 38]]),
+        (6, [[3, 3], [10, 10], [11, 11], [18, 18], [23, 23], [30, 30],
+             [35, 35], [38, 38]]),
         (100, [[3, 3, 11, 11, 18, 18], [23, 23, 35, 35, 38, 38]]),
     ]
 
@@ -504,9 +512,10 @@ class CalcBreaksCharMultiTabTest(CalcTabTest, unittest.TestCase):
     text = "\t\tabfg ssdjf\tatrvs\naltj\t\tsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
-        ( 10, [[0, 1], [12, 12], [18, 18], [23, 23, 24], [35, 35], [38, 38]]),
-        ( 6, [[0], [1], [8, 8], [12, 12], [18, 18], [23, 23], [24], [31, 31], [37, 37], [38, 38]]),
+        (100, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
+        (10, [[0, 1], [12, 12], [18, 18], [23, 23, 24], [35, 35], [38, 38]]),
+        (6, [[0], [1], [8, 8], [12, 12], [18, 18], [23, 23], [24], [31, 31],
+             [37, 37], [38, 38]]),
     ]
 
 
@@ -515,9 +524,9 @@ class CalcBreaksSpaceTabTest(CalcTabTest, unittest.TestCase):
     text = "abfg\tsdjf\taskhtrvs\naltjhgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [[4, 4, 9, 9, 18, 18], [38, 38]]),
-        ( 6, [[4, 4], [9, 9], [16], [18, 18], [25], [31], [37], [38, 38]]),
-        ( 10, [[4, 4], [9, 9], [18, 18], [28, 28], [38, 38]]),
+        (100, [[4, 4, 9, 9, 18, 18], [38, 38]]),
+        (6, [[4, 4], [9, 9], [16], [18, 18], [25], [31], [37], [38, 38]]),
+        (10, [[4, 4], [9, 9], [18, 18], [28, 28], [38, 38]]),
     ]
 
 
@@ -526,9 +535,10 @@ class CalcBreaksSpaceTabTest2(CalcTabTest, unittest.TestCase):
     text = "abfg\tsd f askh rvs\nalt\thgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [[4, 4, 18, 18], [22, 22, 38, 38]]),
-        ( 6, [[4, 4], [9, 9], [14, 14], [18, 18], [22, 22], [29], [35], [38, 38]]),
-        ( 10, [[4, 4, 7, 7], [18, 18], [22, 22], [28, 28], [38, 38]]),
+        (100, [[4, 4, 18, 18], [22, 22, 38, 38]]),
+        (6, [[4, 4], [9, 9], [14, 14], [18, 18], [22, 22], [29], [35],
+             [38, 38]]),
+        (10, [[4, 4, 7, 7], [18, 18], [22, 22], [28, 28], [38, 38]]),
     ]
 
 
@@ -541,8 +551,10 @@ class CalcBreaksDBSpaceTabTest(CalcTabTest, unittest.TestCase):
     # tests
 
     do = [
-        (10, [[3, 3, 5], [11, 11], [18, 18], [23, 23], [30], [35, 35, 38, 38]]),
-        (6, [[3, 3], [10], [11, 11], [18, 18], [23, 23], [30], [35, 35], [38, 38]]),
+        (10, [[3, 3, 5], [11, 11], [18, 18], [23, 23], [30],
+              [35, 35, 38, 38]]),
+        (6, [[3, 3], [10], [11, 11], [18, 18], [23, 23], [30], [35, 35],
+             [38, 38]]),
         (100, [[3, 3, 11, 11, 18, 18], [23, 23, 35, 35, 38, 38]]),
     ]
 
@@ -551,7 +563,8 @@ class CalcBreaksSpaceTabBugs(CalcTabTest, unittest.TestCase):
     # Some encountered bugs in tab layouts
 
     mode = 'space'
-    text = '#    \tLicense \tas \tpublished \tby the Free Software Foundation; either\n'
+    text = '#    \tLicense \tas \tpublished \tby the Free Software ' \
+           'Foundation; either\n'
 
     do = [
         (60, [[5, 5, 14, 14, 18, 18, 29, 29, 41, 41], [69, 69], [70]]),
@@ -564,14 +577,15 @@ class CalcBreaksSpaceMultiTabTest(CalcTabTest, unittest.TestCase):
     text = "\t\tabfg ssdjf\tatrvs\naltj\t\tsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
-        ( 10, [[0, 1], [12, 12], [18, 18], [23, 23, 24], [28, 28], [38, 38]]),
-        ( 6, [[0], [1], [6, 6], [12, 12], [18, 18], [23, 23], [24], [31], [37], [38, 38]]),
+        (100, [[0, 1, 12, 12, 18, 18], [23, 23, 24, 38, 38]]),
+        (10, [[0, 1], [12, 12], [18, 18], [23, 23, 24], [28, 28], [38, 38]]),
+        (6, [[0], [1], [6, 6], [12, 12], [18, 18], [23, 23], [24], [31], [37],
+             [38, 38]]),
     ]
 
 
 #################################################
-## DOS and other line-endings
+# DOS and other line-endings
 #################################################
 
 
@@ -580,9 +594,9 @@ class DOSNewlineTest(CalcBreaksTest, unittest.TestCase):
     text = "abfghsdjf askhtrvs\r\naltjhgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [18, 39]),
-        ( 6, [6, 12, 18, 26, 32, 38, 39]),
-        ( 10, [10, 18, 30, 39]),
+        (100, [18, 39]),
+        (6, [6, 12, 18, 26, 32, 38, 39]),
+        (10, [10, 18, 30, 39]),
     ]
 
 
@@ -591,9 +605,9 @@ class MacNewlineTest(CalcBreaksTest, unittest.TestCase):
     text = "abfghsdjf askhtrvs\raltjhgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [18, 38]),
-        ( 6, [6, 12, 18, 25, 31, 37, 38]),
-        ( 10, [10, 18, 29, 38]),
+        (100, [18, 38]),
+        (6, [6, 12, 18, 25, 31, 37, 38]),
+        (10, [10, 18, 29, 38]),
     ]
 
 
@@ -602,9 +616,9 @@ class BBCNewlineTest(CalcBreaksTest, unittest.TestCase):
     text = "abfghsdjf askhtrvs\n\raltjhgsdf ljahtshgf"
     # tests
     do = [
-        ( 100, [18, 39]),
-        ( 6, [18, 39]),
-        ( 10, [18, 39]),
+        (100, [18, 39]),
+        (6, [18, 39]),
+        (10, [18, 39]),
     ]
 
 # No, we don't support QNX, Atari or non-ASCII derived charsets.
@@ -615,9 +629,9 @@ class EmptyLinesClipTest(CalcBreaksTest, unittest.TestCase):
     text = "abfghsdjf askhtrv\n\nsltjhgsdf ljahtshgf\n"
     # tests
     do = [
-        ( 100, [17, 18, 38, 39]),
-        ( 6, [17, 18, 38, 39]),
-        ( 10, [17, 18, 38, 39]),
+        (100, [17, 18, 38, 39]),
+        (6, [17, 18, 38, 39]),
+        (10, [17, 18, 38, 39]),
     ]
 
 
@@ -626,9 +640,9 @@ class EmptyLinesAnyTest(CalcBreaksTest, unittest.TestCase):
     text = "abfghsdjf askhtrv\n\nsltjhgsdf ljahtshgf\n"
     # tests
     do = [
-        ( 100, [17, 18, 38, 39]),
-        ( 6, [6, 12, 17, 18, 25, 31, 37, 38, 39]),
-        ( 10, [10, 17, 18, 29, 38, 39]),
+        (100, [17, 18, 38, 39]),
+        (6, [6, 12, 17, 18, 25, 31, 37, 38, 39]),
+        (10, [10, 17, 18, 29, 38, 39]),
     ]
 
 
@@ -637,7 +651,7 @@ class EmptyLinesSpaceTest(CalcBreaksTest, unittest.TestCase):
     text = "abfghsdjf askhtrv\n\nsltjhgsdf ljahtshgf\n"
     # tests
     do = [
-        ( 100, [17, 18, 38, 39]),
-        ( 6, [6, 12, 17, 18, 25, 31, 37, 38, 39]),
-        ( 10, [9, 17, 18, 28, 38, 39]),
+        (100, [17, 18, 38, 39]),
+        (6, [6, 12, 17, 18, 25, 31, 37, 38, 39]),
+        (10, [9, 17, 18, 28, 38, 39]),
     ]

@@ -31,4 +31,4 @@ setup(name='doctrine.urwid',
           'urwid',
           'doctrine.code'
       ],
-)
+      )

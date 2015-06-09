@@ -33,6 +33,7 @@ ac vitae erat. Cras varius pulvinar metus eu varius. Sed at magna lacus.
 Aliquam id purus augue. Nulla facilisi.
 or sem."""
 
+
 class TextEditorTest(unittest.TestCase):
 
     def _get_editor(self, text):
