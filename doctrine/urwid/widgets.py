@@ -329,7 +329,7 @@ class TextEditor(urwid.ListBox):
                 # Merge the lines
                 self.body.combine_focus_with_prev()
                 return
-            self.body.code.delete_characters(pos, col-1, pos, col)
+            self.body.code.delete_text(pos, col-1, pos, col)
             focus_widget.set_edit_text(self.body.code[pos])
             focus_widget.set_edit_pos(col-1)
             return
@@ -345,7 +345,7 @@ class TextEditor(urwid.ListBox):
                 # Merge the lines
                 self.body.combine_focus_with_next()
                 return
-            self.body.code.delete_characters(pos, col, pos, col + 1)
+            self.body.code.delete_text(pos, col, pos, col + 1)
             focus_widget.set_edit_text(self.body.code[pos])
             return
 
