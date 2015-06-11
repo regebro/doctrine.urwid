@@ -23,6 +23,7 @@ def find_newline(text, pos):
 
 
 class CodeLayout(TextLayout):
+    """A layout for Urwid that can deal with tabs."""
 
     tab_width = 8
 

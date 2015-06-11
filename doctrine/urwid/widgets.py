@@ -14,6 +14,7 @@ ERASE_RIGHT = 'erase right'
 
 
 class LineNosWidget(urwid.WidgetWrap):
+    """This widget wraps a Code widget to display line numbers."""
 
     def render(self, size, focus=False):
         last_line = len(self._w.body.code.lines)
@@ -24,7 +25,7 @@ class LineNosWidget(urwid.WidgetWrap):
             (max_col - width, max_rows), focus)
 
         lines = list(reversed(top[1:][0])) + [middle[1:-1]] + bottom[1:][0]
-        widgets = [(line[2], LineNoWidget(line[1], line[2])) for line in lines]
+        widgets = [(line[2], LineNoWidget(line[1])) for line in lines]
 
         linenos = urwid.Pile(widgets)
         wrapper = urwid.Columns([(width, linenos), self._w], dividechars=1,
@@ -35,12 +36,13 @@ class LineNosWidget(urwid.WidgetWrap):
 
 
 class LineNoWidget(urwid.Widget):
+    """A widget that displays a row number."""
+
     _selectable = False
     _sizing = frozenset([urwid.FIXED])
 
-    def __init__(self, row, rows):
+    def __init__(self, row):
         self.row = row
-        self.rows = rows
 
     def render(self, size, focus=False):
         maxcol, maxrow = size
@@ -54,6 +56,7 @@ class LineNoWidget(urwid.Widget):
 
 
 class LineEdit(urwid.Edit):
+    """The editor for one line of code."""
     def __init__(self, edit_text="", align=urwid.widget.LEFT,
                  wrap=urwid.widget.SPACE, layout=None, newline=None):
 
@@ -102,7 +105,7 @@ class LineEdit(urwid.Edit):
 
 
 class LineWalker(urwid.ListWalker):
-    """ListWalker-compatible class for lazily reading file contents."""
+    """A ListWalker for doctrine.code.Code objects."""
 
     def __init__(self, code, newline, layout):
         self.code = code
@@ -184,6 +187,7 @@ class LineWalker(urwid.ListWalker):
 
 
 class EditorConfig(object):
+    """This holds the configuration for a TextEditor."""
     newline = u'↲'
     screen_encoding = 'UTF-8'
     command_map = {
@@ -196,15 +200,16 @@ class EditorConfig(object):
 
 
 class TextEditor(urwid.ListBox):
+    """An Urwid code editor widget.
+
+    :param code: The code object to be edited
+    :type code: doctrine.code.Code
+    """
+
     _sizing = frozenset(['box'])
 
-    def __init__(self, file, config):
-        """An Urwid code editor widget.
-
-        file: A file like object.
-        config: An EditorConfig object.
-        """
-        walker = LineWalker(file, newline=config.newline,
+    def __init__(self, code, config):
+        walker = LineWalker(code, newline=config.newline,
                             layout=CodeLayout())
         self.parser = None
         urwid.ListBox.__init__(self, walker)
@@ -213,7 +218,7 @@ class TextEditor(urwid.ListBox):
         for k, v in self.config.command_map.items():
             self._command_map[k] = v
 
-    def valid_char(self, ch):
+    def _valid_char(self, ch):
         """
         Filter for text that may be entered into this widget by the user
 
@@ -224,7 +229,8 @@ class TextEditor(urwid.ListBox):
         """
         return is_wide_char(ch, 0) or (len(ch) == 1 and ord(ch) >= 32)
 
-    def insert_text(self, key, focus_widget, pos):
+    def _insert_char(self, key, focus_widget, pos):
+        """Inserts a character at the current edit position."""
         col = focus_widget.edit_pos
         text = self.body.code[pos]
         text = text[:col] + key + text[col:]
@@ -243,17 +249,17 @@ class TextEditor(urwid.ListBox):
             if unhandled:
                 return key
 
-        if self.valid_char(key):
-            self.insert_text(key, focus_widget, pos)
-            return
-
         if self.set_focus_pending or self.set_focus_valign_pending:
             self._set_focus_complete((maxcol, maxrow), focus=True)
+
+        if self._valid_char(key):
+            self._insert_char(key, focus_widget, pos)
+            return
 
         if key == "tab":
             # Tab is magical and maps to different commands in different
             # situations. So far we insert a tab, though.
-            self.insert_text('\t', focus_widget, pos)
+            self._insert_char('\t', focus_widget, pos)
             return
 
         if key == "enter":
