@@ -89,7 +89,7 @@ class LineEdit(urwid.Edit):
 
         pos = urwid.text_layout.calc_pos(self.get_text()[0], trans, x, y)
         e_pos = pos - len(self.caption)
-        self.edit_pos = e_pos
+        self.set_edit_pos(e_pos)
         self.pref_col_maxcol = x, maxcol
         self._invalidate()
         return True

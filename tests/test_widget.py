@@ -117,6 +117,15 @@ class TextEditorTest(unittest.TestCase):
         widget.keypress(size, 'right')
         self.assertEqual(widget.get_cursor_coords(size), (0, 1))
 
+        # Now go to the end of a long line:
+        widget.set_focus(10)
+        widget.keypress(size, 'end')
+        # Go down to a short line
+        import pdb;pdb.set_trace()
+        widget.keypress(size, 'down')
+        self.assertEqual(widget.get_cursor_coords(size), (19, 11))
+
+
     def test_movement_limits(self):
         widget = self._get_editor(LOREM)
         size = (80, 24)
